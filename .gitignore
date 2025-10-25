@@ -1,0 +1,28 @@
+# --- Python build/caches
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+build/
+dist/
+
+# --- Virtual environments
+.venv/
+venv/
+env/
+
+# --- OS / Editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Project data & outputs (keep repo clean)
+data/
+outputs/
+
+# --- Notebooks (you said you use .py only)
+*.ipynb
+.ipynb_checkpoints/
