@@ -200,49 +200,6 @@ python -m scripts.03_tsfresh_pca_tsne
 
 ---
 
-## 🗂️ .gitignore (add this to keep repo clean)
-
-Create a `.gitignore` in the repo root:
-
-```
-# env & OS
-.venv/
-__pycache__/
-*.pyc
-.DS_Store
-
-# IDE
-.vscode/
-.idea/
-
-# data & outputs (keep structure, ignore big/raw)
-data/raw/*
-!data/raw/.gitkeep
-outputs/*
-!outputs/.gitkeep
-
-# notebooks (if you add later)
-*.ipynb_checkpoints/
-```
-
-_(Add empty `.gitkeep` files to keep folders in Git: `data/raw/.gitkeep`, `outputs/.gitkeep`)_
-
----
-
-## 🧾 How to publish to GitHub
-
-```bash
-# from repo root
-git init
-git add .
-git commit -m "init: Nov 7 data analysis milestone (demographics, VGRF plots, TSFresh + PCA/t-SNE)"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/parkinsons-mamba-gait.git
-git push -u origin main
-```
-
----
-
 ## 👨‍💻 Author
 
 **Prosenjit Chowdhury**
