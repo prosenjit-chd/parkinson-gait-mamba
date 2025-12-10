@@ -8,7 +8,7 @@ The goal is to build a complete data-to-model pipeline for **automatic Parkinson
 
 ## 🎯 Project Overview
 
-**Tasks completed in the Nov 7 milestone:**
+**Tasks completed (Nov 7 - Jan 11):**
 
 1. Load and clean the **PhysioNet Gaitpdb dataset** (PD vs Control).
 2. Summarize **demographics** — subject count, age, and gender.
@@ -20,7 +20,7 @@ The goal is to build a complete data-to-model pipeline for **automatic Parkinson
 8. Apply **PCA** for dimensionality reduction and visualize PD vs Control separability.
 9. Summarize all outputs (CSV + figures) for future baseline model training.
 
-Upcoming deliverables include baseline ML models (Dec 7) and Mamba SSMs (Feb 20).
+Upcoming deliverables include Mamba SSMs (Feb 20).
 
 ---
 
@@ -41,7 +41,9 @@ parkinsons_mamba_project/
 │   ├── 02_examples_vgrf.py      # example Control & PD VGRF signals
 │   ├── 03_tsfresh_features.py   # TSFresh feature extraction (L/R)
 │   ├── 04_visualize_summary.py  # variance, correlation, PCA, UPDRS plots
-│   └── 05_feature_combination.py# left-right concatenation diagram
+│   ├── 05_feature_combination.py# left-right concatenation diagram
+│   ├── 08_optimized_models.py   # Deliverable 2: Model Training & Optimization
+│   └── 09_comparative_plots.py  # Deliverable 2: Visualization Dashboards
 ├── src/
 │   ├── __init__.py
 │   ├── config.py                # all folder paths
@@ -141,7 +143,7 @@ Outputs are automatically saved in `outputs/tables/` and `outputs/figures/`.
 
 ## 🗺️ Roadmap to Next Milestones
 
-### 📅 **Dec 7 – Baseline Models**
+### 📅 **Jan 11 – Baseline Models**
 
 Train on TSFresh features using 5-fold stratified CV:
 
@@ -150,6 +152,61 @@ Train on TSFresh features using 5-fold stratified CV:
 
 **Metrics:** Accuracy, Sensitivity, Specificity, AUC
 **Visuals:** Confusion matrices for Left, Right, Combined sets
+
+---
+
+## 📈 Deliverable 2: Baseline & Optimized Models (Jan 11 Milestone)
+
+The goal of this phase was to implement and optimize classical Machine Learning classifiers for PD detection using TSFresh features.
+
+### **Methodology**
+
+1.  **Preprocessing**:
+    *   **Imputation**: Median strategy for missing values.
+    *   **Scaling**: `StandardScaler` (Z-score normalization) applied to training data and transformed on test data.
+    *   **Feature Selection**: `SelectKBest` (ANOVA F-value) to reduce dimensionality.
+
+2.  **Validation**:
+    *   **Stratified 5-Fold Cross-Validation** to ensure class balance in every fold.
+    *   **Hyperparameter Tuning**: `RandomizedSearchCV` to optimize critical parameters (e.g., SVM `C` & `gamma`, Tree depth).
+
+### **Models Implemented**
+
+Per requirements, 5 distinct classifiers were trained and compared:
+
+1.  **Random Forest** (Tree Ensemble)
+2.  **SVM - Linear Kernel** (Linear Boundary)
+3.  **SVM - RBF Kernel** (Non-linear Boundary)
+4.  **ExtraTrees** (Optimized Ensemble - *Top Performer*)
+5.  **CatBoost** (Gradient Boosting - *High Accuracy*)
+
+### **Key Results**
+
+Evaluation metrics: Accuracy, Sensitivity, Specificity, and AUC.
+
+| Input | Best Model | Accuracy | AUC |
+| :--- | :--- | :--- | :--- |
+| **Combined (LR)** | **ExtraTrees** | **0.745** | **0.871** |
+| **Left Foot (L)** | **CatBoost** | **0.782** | **0.832** |
+| **Right Foot (R)** | ExtraTrees | 0.776 | 0.833 |
+
+*Confusion matrices and comparative diagrams (Bar/Radar/Heatmaps) are generated in `outputs/figures/`.*
+
+### **How to Run (Deliverable 2)**
+
+To execute the optimization loop and generate all 15 confusion matrices:
+
+```bash
+python scripts/08_optimized_models.py
+```
+
+To generate the comparative visualization diagrams:
+
+```bash
+python scripts/09_comparative_plots.py
+```
+
+---
 
 ### 📅 **Feb 20 – Mamba / Selective-SSM Models**
 

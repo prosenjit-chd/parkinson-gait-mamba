@@ -32,10 +32,14 @@ import seaborn as sns
 from pathlib import Path
 from tqdm import tqdm
 
-from sklearn.model_selection import StratifiedKFold, GridSearchCV
+from sklearn.feature_selection import SelectKBest, f_classif
+
+from sklearn.model_selection import StratifiedKFold, GridSearchCV, RandomizedSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.metrics import (
     accuracy_score,
@@ -57,22 +61,56 @@ MODELS = {
     "RandomForest": {
         "model": RandomForestClassifier(random_state=42),
         "params": {
-            "clf__n_estimators": [50, 100, 200],
-            "clf__max_depth": [None, 10, 20],
-            "clf__min_samples_split": [2, 5]
+            "selector__k": [10, 20, 30, 40, "all"],
+            "clf__class_weight": [None, "balanced", "balanced_subsample"],
+            "clf__n_estimators": [100, 200, 300, 500],
+            "clf__max_depth": [None, 10, 20, 30],
+            "clf__min_samples_split": [2, 5, 10]
+        }
+    },
+    "ExtraTrees": {
+        "model": ExtraTreesClassifier(random_state=42),
+        "params": {
+            "selector__k": [10, 20, 30, 40, "all"],
+            "clf__class_weight": [None, "balanced", "balanced_subsample"],
+            "clf__n_estimators": [100, 200, 300, 500],
+            "clf__max_depth": [None, 10, 20, 30],
+            "clf__min_samples_split": [2, 5, 10]
         }
     },
     "SVM_Linear": {
         "model": SVC(kernel="linear", probability=True, random_state=42),
         "params": {
-            "clf__C": [0.01, 0.1, 1, 10, 100]
+            "selector__k": [10, 20, 30, 40, "all"],
+            "clf__class_weight": [None, "balanced"],
+            "clf__C": [0.001, 0.01, 0.1, 1, 10, 100, 1000]
         }
     },
     "SVM_RBF": {
         "model": SVC(kernel="rbf", probability=True, random_state=42),
         "params": {
-            "clf__C": [0.1, 1, 10, 100],
-            "clf__gamma": ["scale", "auto", 0.01, 0.1]
+            "selector__k": [10, 20, 30, 40, "all"],
+            "clf__class_weight": [None, "balanced"],
+            "clf__C": [0.1, 1, 10, 100, 1000],
+            "clf__gamma": ["scale", "auto", 0.001, 0.01, 0.1, 1]
+        }
+    },
+    "LogisticRegression": {
+        "model": LogisticRegression(solver="liblinear", random_state=42),
+        "params": {
+            "selector__k": [10, 20, 30, 40, "all"],
+            "clf__class_weight": [None, "balanced"],
+            "clf__C": [0.001, 0.01, 0.1, 1, 10, 100, 1000],
+            "clf__penalty": ["l1", "l2"]
+        }
+    },
+    "GradientBoosting": {
+        "model": GradientBoostingClassifier(random_state=42),
+        "params": {
+            "selector__k": [10, 20, 30, 40, "all"],
+            "clf__n_estimators": [100, 200, 300, 500],
+            "clf__learning_rate": [0.01, 0.05, 0.1, 0.2],
+            "clf__max_depth": [3, 5, 7, 9]
         }
     }
 }
@@ -154,17 +192,20 @@ def run_experiment(feature_file, tag):
             
             pipe = Pipeline([
                 ("scaler", StandardScaler()),
+                ("selector", SelectKBest(f_classif)),
                 ("clf", config["model"])
             ])
             
-            # Grid Search (Inner Loop)
-            # We need to prefix params with 'clf__' because it's in a pipeline
-            gs = GridSearchCV(
+            # Randomized Search (Inner Loop)
+            # Efficiently samples the vast parameter space
+            gs = RandomizedSearchCV(
                 pipe, 
                 config["params"], 
-                cv=3, # 3-fold for inner tuning to save time
-                scoring="accuracy", 
-                n_jobs=-1
+                n_iter=60, # Try 60 combinations per fold
+                cv=5, 
+                scoring="roc_auc", 
+                n_jobs=-1,
+                random_state=42
             )
             
             gs.fit(X_train, y_train)
@@ -208,15 +249,27 @@ def main():
     all_results = []
     
     # Process each feature set
+    # Process each feature set
+    tag_map = {"L": "Left", "R": "Right", "LR": "Combined"}
     for tag in ["L", "R", "LR"]:
         fpath = TAB_DIR / f"features_{tag}.csv"
-        res = run_experiment(fpath, tag)
+        # Pass the mapped logic name for the report "Input" column, 
+        # but usage in title/filename relies on run_experiment logic.
+        # Let's adjust run_experiment to accept a display_name if we want distinct behavior,
+        # or just pass the display_name as 'tag' if filenames don't matter much or we change them too.
+        # To keep it simple and match the table strictly:
+        display_name = tag_map[tag]
+        
+        # We need run_experiment to use fpath but report display_name.
+        # Let's slightly modify the call or the function.
+        # Easier: update run_experiment to take (file, display_name)
+        res = run_experiment(fpath, display_name)
         all_results.extend(res)
         
     # Save Results
     if all_results:
         df_res = pd.DataFrame(all_results)
-        out_path = TAB_DIR / "results_baseline.csv"
+        out_path = TAB_DIR / "results_baseline_extreme.csv"
         df_res.to_csv(out_path, index=False)
         print(f"\n✅ Results saved to {out_path}")
         print(df_res.round(3))
