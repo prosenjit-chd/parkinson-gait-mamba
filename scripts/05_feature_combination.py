@@ -1,9 +1,17 @@
+"""
+05_feature_combination.py
+Creates the Feature Combination Strategy Diagram
+Saves directly instead of plt.show()
+"""
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch, Arrow
+from pathlib import Path
+
+FIG_DIR = Path("outputs/figures")
+FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 fig, ax = plt.subplots(figsize=(10, 3))
 ax.axis("off")
-
 
 # Function to draw rounded boxes
 def draw_box(text, xy, color="#5DADE2"):
@@ -58,4 +66,7 @@ plt.title(
     pad=15,
 )
 plt.tight_layout()
-plt.show()
+
+output_path = FIG_DIR / "feature_combination_diagram.png"
+plt.savefig(output_path, dpi=150)
+print(f" Generated Feature Combination Diagram: {output_path}")

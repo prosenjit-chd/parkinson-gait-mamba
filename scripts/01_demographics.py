@@ -42,7 +42,7 @@ for ext in ["xlsx", "xls", "csv", "txt", "html"]:
 if not meta_file:
     raise FileNotFoundError("No demographics file found in data/metadata/")
 
-print(f"📂 Using metadata file: {meta_file.name}")
+print(f"[INFO] Using metadata file: {meta_file.name}")
 
 # ------------------------------------------------------------
 # Load metadata
@@ -78,7 +78,7 @@ if not id_col:
 meta[id_col] = meta[id_col].astype(str).str.strip()
 
 print(
-    f"🧾 Detected columns → ID: {id_col}, Group: {group_col}, Age: {age_col}, Sex: {sex_col}"
+    f"[INFO] Detected columns -> ID: {id_col}, Group: {group_col}, Age: {age_col}, Sex: {sex_col}"
 )
 
 # ------------------------------------------------------------
@@ -91,7 +91,7 @@ meta_subjects = meta[id_col].unique()
 intersection = set(signal_subjects) & set(meta_subjects)
 meta_clean = meta[meta[id_col].isin(intersection)].copy()
 
-print(f"✅ Matched subjects retained: {len(meta_clean)} / {len(meta)}")
+print(f"[OK] Matched subjects retained: {len(meta_clean)} / {len(meta)}")
 
 # ------------------------------------------------------------
 # Clean & standardize columns
@@ -135,7 +135,7 @@ for group, df in meta_clean.groupby(group_col):
 df_summary = pd.DataFrame(summary_rows)
 df_summary.to_csv(OUT_TABLES / "demographics_summary.csv", index=False)
 
-print("\n📊 DEMOGRAPHIC SUMMARY\n", df_summary)
+print("\n[CHART] DEMOGRAPHIC SUMMARY\n", df_summary)
 
 # ------------------------------------------------------------
 # Plot 1: Boxplot of age by group
@@ -164,5 +164,5 @@ plt.tight_layout()
 plt.savefig(OUT_FIGURES / "subjects_per_group.png", dpi=300)
 plt.close()
 
-print("✅ Figures saved to outputs/figures/")
-print("✅ Tables saved to outputs/tables/")
+print("[OK] Figures saved to outputs/figures/")
+print("[OK] Tables saved to outputs/tables/")

@@ -1,276 +1,362 @@
-# 🧠 Parkinson’s Gait Analysis – TSFresh Baseline & Mamba Prep (Python)
+```markdown
+# 🧠 Parkinson’s Gait Analysis with Time-Series Machine Learning
 
-This repository contains the **Nov 7 Data Analysis milestone** for the FAU Pattern Recognition Lab (Time Series Intelligence WS 2025/26) project under **Dr. Tomás Arias Vergara**.
+![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
+![Machine Learning](https://img.shields.io/badge/Machine%20Learning-Scikit--Learn-orange)
+![Time Series](https://img.shields.io/badge/Time--Series-Feature%20Engineering-green)
+![Status](https://img.shields.io/badge/Project-Completed-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
 
-The goal is to build a complete data-to-model pipeline for **automatic Parkinson’s Disease (PD) detection** from **Vertical Ground Reaction Force (VGRF)** signals, beginning with traditional feature engineering and progressing toward advanced **State Space Models (SSMs)** such as **Mamba**.
+This repository contains a **complete time-series machine learning pipeline** developed for the **FAU Pattern Recognition Lab – Time Series Project (WS 2025/26)** under **Dr. Tomás Arias Vergara**.
 
----
+The project demonstrates how **raw sensor signals can be transformed into statistical features and used for machine learning classification**.
 
-## 🎯 Project Overview
+Although the dataset originates from biomedical research, the techniques used here are **general-purpose time-series analysis methods** applicable to:
 
-**Tasks completed (Nov 7 - Jan 11):**
-
-1. Load and clean the **PhysioNet Gaitpdb dataset** (PD vs Control).
-2. Summarize **demographics** — subject count, age, and gender.
-3. Visualize **example VGRF signals** for Control vs PD.
-4. Extract **statistical features with TSFresh** (Left, Right, Combined).
-5. Analyze **feature variance & correlation structure**.
-6. Combine **Left & Right foot features** via concatenation/averaging.
-7. Compute **feature–UPDRS correlations** to interpret disease severity links.
-8. Apply **PCA** for dimensionality reduction and visualize PD vs Control separability.
-9. Summarize all outputs (CSV + figures) for future baseline model training.
-
-Upcoming deliverables include Mamba SSMs (Feb 20).
+- wearable sensor data
+- IoT monitoring
+- industrial signals
+- activity recognition
+- health analytics
 
 ---
 
-## 📁 Project Structure
+# 🎯 Project Objective
+
+The goal of this project is to build a **complete time-series data pipeline** that:
+
+1. Processes raw gait signals
+2. Extracts statistical features
+3. Analyzes feature structure
+4. Applies dimensionality reduction
+5. Trains machine learning classifiers
+6. Compares model performance
+
+The final system evaluates whether **time-series statistical features can distinguish between two classes of gait signals**.
+
+---
+
+# 📊 Dataset
+
+The project uses the **PhysioNet GaitPDB dataset**.
+
+🔗 https://physionet.org/content/gaitpdb/1.0.0/
+
+The dataset contains **vertical ground reaction force (VGRF)** signals recorded during walking.
+
+### Dataset Summary
+
+| Property             | Value                          |
+| -------------------- | ------------------------------ |
+| Subjects             | 165                            |
+| Control subjects     | 72                             |
+| Parkinson’s subjects | 93                             |
+| Sampling frequency   | 100 Hz                         |
+| Recording duration   | ~2 minutes                     |
+| Signal type          | Vertical Ground Reaction Force |
+
+Each subject contains **signals from both the left and right foot**, enabling gait pattern analysis.
+
+---
+
+# ⚙️ Project Workflow
+
+The pipeline consists of several stages.
+```
+
+Raw VGRF Signals
+│
+▼
+Signal Preprocessing
+│
+▼
+Time-Series Feature Extraction (TSFresh)
+│
+▼
+Feature Analysis
+(variance, correlation)
+│
+▼
+Dimensionality Reduction
+(PCA / t-SNE)
+│
+▼
+Machine Learning Models
+│
+▼
+Model Evaluation
+(Accuracy, AUC, Sensitivity, Specificity)
 
 ```
-parkinsons_mamba_project/
-├── data/
-│   ├── raw/                     # 312 PhysioNet .txt files (Ga*/Ju*/Si*)
-│   └── metadata/
-│       ├── demographics.xlsx    # subject age/sex/group info
-│       └── (other meta files)
-├── outputs/
-│   ├── figures/                 # all generated plots (.png)
-│   └── tables/                  # all CSV outputs
-├── scripts/
-│   ├── 01_demographics.py       # summary table + boxplot/histogram
-│   ├── 02_examples_vgrf.py      # example Control & PD VGRF signals
-│   ├── 03_tsfresh_features.py   # TSFresh feature extraction (L/R)
-│   ├── 04_visualize_summary.py  # variance, correlation, PCA, UPDRS plots
-│   ├── 05_feature_combination.py# left-right concatenation diagram
-│   ├── 08_optimized_models.py   # Deliverable 2: Model Training & Optimization
-│   └── 09_comparative_plots.py  # Deliverable 2: Visualization Dashboards
-├── src/
-│   ├── __init__.py
-│   ├── config.py                # all folder paths
-│   ├── io_physionet.py          # data reader / loader
-│   ├── preprocess.py            # normalization & trimming
-│   ├── features_tsfresh.py      # TSFresh utility functions
-│   ├── analysis_variance.py     # variance/correlation helpers
-│   └── viz.py                   # all plotting utilities
-├── presentation/
-│   ├── slides_nov7.pptx         # FAU PRL presentation
-│   └── slides_nov7.pdf          # exported PDF version
-├── requirements.txt
-└── README.md
+
+---
+
+# 📈 Time-Series Feature Engineering
+
+Raw signals are converted into numerical feature vectors using **TSFresh**.
+
+### Sliding Window Configuration
+
+| Parameter | Value |
+|----------|------|
+Sampling rate | 100 Hz |
+Window size | 30 ms |
+Step size | 15 ms |
+
+Statistical features extracted include:
+
+- mean
+- standard deviation
+- root mean square
+- kurtosis
+- skewness
+- signal energy
+- interquartile range
+- zero crossings
+
+Each subject is represented by **56 extracted features**.
+
+Three feature sets are generated:
+
+| Feature Set | Description |
+|-------------|-------------|
+L | Left foot features |
+R | Right foot features |
+LR | Combined left and right features |
+
+---
+
+# 📊 Feature Analysis
+
+Several analyses were performed to understand the feature space.
+
+### Feature Variance Analysis
+Identifies the most informative features.
+
+```
+
+outputs/figures/top_features_variance_LR.png
+
+```
+
+### Feature Correlation Heatmap
+Reveals redundancy between features.
+
+```
+
+outputs/figures/feature_corr_heatmap_LR.png
+
+```
+
+### Feature Distribution Visualization
+
+```
+
+outputs/figures/feature_mean_distribution_LR.png
+
 ```
 
 ---
 
-## 🧩 Methods Summary
+# 📉 Dimensionality Reduction
 
-### **Signals**
+To visualize feature separability, dimensionality reduction techniques were applied.
 
-Vertical Ground Reaction Force (VGRF) from both feet
-→ sampled at **100 Hz (10 ms intervals)**
-→ ~120 s per subject
+### PCA Visualization
 
-### **Demographics**
+```
 
-| Group   | Subjects | Mean Age (±SD) | Male | Female |
-| :------ | :------: | :------------: | :--: | :----: |
-| Control |    72    |   63.7 ± 8.7   |  40  |   32   |
-| PD      |    93    |   66.3 ± 9.5   |  58  |   35   |
+outputs/figures/pca_L.png
+outputs/figures/pca_R.png
+outputs/figures/pca_LR.png
 
-Balanced gender and similar age ranges ensure fair comparability.
+```
 
-### **Feature Extraction (TSFresh)**
-
-- Window = 30 ms , Step = 15 ms , Sampling = 100 Hz
-- Extract 14 statistical features (mean, std, IQR, RMS, energy, kurtosis, etc.) per window
-- Aggregate → 56 features per foot → 112 for combined (Left + Right)
-
-### **Feature Combination Strategy**
-
-Two approaches evaluated:
-
-1. **Concatenation** → merge L + R feature vectors (112 features).
-2. **Averaging** → mean of corresponding L/R features (56 features).
-   Combined features capture inter-foot asymmetry — a key PD indicator.
-
-### **Feature Variance & Correlation**
-
-- Identified top 10 features by variance (`kurtosis_kurt`, `zero_crossings_kurt`, etc.).
-- Correlation heatmap reveals low redundancy → diverse informative features.
-
-### **Feature–UPDRS Correlation**
-
-Computed Pearson correlation between each feature and UPDRS score.
-Top correlated features highlight motor impairment patterns.
-
-### **Dimensionality Reduction**
-
-Applied PCA to reduce features → 2 principal components.
-Partial PD vs Control separation visible, strongest in right-foot features.
+These plots illustrate the **structure of the feature space and class clustering**.
 
 ---
 
-## 🖼️ Key Figures Generated
+# 🤖 Machine Learning Models
 
-| Category            | File Name                                           | Description                      |
-| :------------------ | :-------------------------------------------------- | :------------------------------- |
-| Demographics        | `age_boxplot.png`, `age_histogram.png`              | Age distribution plots           |
-| Signal Examples     | `example_control.png`, `example_patient.png`        | VGRF pattern comparison          |
-| Feature Extraction  | `tsfresh_features_LR.csv`                           | Combined feature table           |
-| Variance Analysis   | `top_features_variance_LR.png`                      | Top 10 feature variances         |
-| Correlation Heatmap | `feature_corr_heatmap_LR.png`                       | Feature relationships            |
-| Feature Combination | `feature_combination_diagram.png`                   | L/R concatenation workflow       |
-| UPDRS Analysis      | `updrs_feature_correlation.png`                     | Top 10 UPDRS-correlated features |
-| PCA Visualization   | `pca_left.png`, `pca_right.png`, `pca_combined.png` | PD vs Control separation plots   |
-| Summary             | `baseline_summary_diagram.png`                      | Pipeline overview diagram        |
+Five machine learning algorithms were evaluated.
+
+| Model |
+|------|
+Random Forest |
+Support Vector Machine (Linear) |
+Support Vector Machine (RBF) |
+Extra Trees |
+CatBoost |
+
+Training was performed using **5-fold cross-validation**.
 
 ---
 
-## 🚀 How to Run (Nov 7 Deliverables)
+# 📊 Model Evaluation Metrics
 
-Run modules from project root for consistent imports.
+Models were evaluated using the following metrics.
+
+| Metric | Description |
+|------|-------------|
+Accuracy | Overall prediction correctness |
+Sensitivity | True positive rate |
+Specificity | True negative rate |
+AUC | Area under ROC curve |
+
+---
+
+# 🏆 Final Model Performance
+
+| Input | Model | Accuracy | Sensitivity | Specificity | AUC |
+|------|------|------|------|------|------|
+L | CatBoost | **0.800** | 0.882 | 0.694 | 0.832 |
+LR | ExtraTrees | 0.758 | 0.849 | 0.639 | **0.874** |
+LR | RandomForest | 0.770 | 0.882 | 0.625 | 0.840 |
+
+Key observations:
+
+- **CatBoost achieved the highest accuracy**
+- **ExtraTrees achieved the best AUC**
+- Tree-based models outperformed SVM models
+- Combining signals improves classification stability
+
+---
+
+# 📁 Project Structure
+
+```
+
+parkinson_time_series_project/
+
+data/
+raw/
+metadata/
+
+scripts/
+01_demographics.py
+02_examples_vgrf.py
+03_tsfresh_features.py
+04_visualize_summary.py
+05_feature_combination.py
+06_generate_methodology_diagrams.py
+08_optimized_models.py
+09_comparative_plots.py
+
+src/
+io_physionet.py
+preprocess.py
+features_tsfresh.py
+analysis_variance.py
+viz.py
+
+outputs/
+figures/
+tables/
+
+main.py
+requirements.txt
+README.md
+
+````
+
+---
+
+# 🚀 Running the Pipeline
+
+Execute the entire workflow with:
 
 ```bash
-python -m scripts.01_demographics
-python -m scripts.02_examples_vgrf
-python -m scripts.03_tsfresh_features
-python -m scripts.04_visualize_summary
-python -m scripts.05_feature_combination
+python main.py
+````
+
+The pipeline automatically performs:
+
+1. Data analysis
+2. Feature extraction
+3. Feature visualization
+4. Model training
+5. Result comparison
+
+Outputs will be saved in:
+
 ```
-
-Outputs are automatically saved in `outputs/tables/` and `outputs/figures/`.
-
----
-
-## 🗺️ Roadmap to Next Milestones
-
-### 📅 **Jan 11 – Baseline Models**
-
-Train on TSFresh features using 5-fold stratified CV:
-
-- Random Forest
-- SVM (linear & RBF)
-
-**Metrics:** Accuracy, Sensitivity, Specificity, AUC
-**Visuals:** Confusion matrices for Left, Right, Combined sets
-
----
-
-## 📈 Deliverable 2: Baseline & Optimized Models (Jan 11 Milestone)
-
-The goal of this phase was to implement and optimize classical Machine Learning classifiers for PD detection using TSFresh features.
-
-### **Methodology**
-
-1.  **Preprocessing**:
-    *   **Imputation**: Median strategy for missing values.
-    *   **Scaling**: `StandardScaler` (Z-score normalization) applied to training data and transformed on test data.
-    *   **Feature Selection**: `SelectKBest` (ANOVA F-value) to reduce dimensionality.
-
-2.  **Validation**:
-    *   **Stratified 5-Fold Cross-Validation** to ensure class balance in every fold.
-    *   **Hyperparameter Tuning**: `RandomizedSearchCV` to optimize critical parameters (e.g., SVM `C` & `gamma`, Tree depth).
-
-### **Models Implemented**
-
-Per requirements, 5 distinct classifiers were trained and compared:
-
-1.  **Random Forest** (Tree Ensemble)
-2.  **SVM - Linear Kernel** (Linear Boundary)
-3.  **SVM - RBF Kernel** (Non-linear Boundary)
-4.  **ExtraTrees** (Optimized Ensemble - *Top Performer*)
-5.  **CatBoost** (Gradient Boosting - *High Accuracy*)
-
-### **Key Results**
-
-Evaluation metrics: Accuracy, Sensitivity, Specificity, and AUC.
-
-| Input | Best Model | Accuracy | AUC |
-| :--- | :--- | :--- | :--- |
-| **Combined (LR)** | **ExtraTrees** | **0.745** | **0.871** |
-| **Left Foot (L)** | **CatBoost** | **0.782** | **0.832** |
-| **Right Foot (R)** | ExtraTrees | 0.776 | 0.833 |
-
-*Confusion matrices and comparative diagrams (Bar/Radar/Heatmaps) are generated in `outputs/figures/`.*
-
-### **How to Run (Deliverable 2)**
-
-To execute the optimization loop and generate all 15 confusion matrices:
-
-```bash
-python scripts/08_optimized_models.py
-```
-
-To generate the comparative visualization diagrams:
-
-```bash
-python scripts/09_comparative_plots.py
+outputs/figures/
+outputs/tables/
 ```
 
 ---
 
-### 📅 **Feb 20 – Mamba / Selective-SSM Models**
+# ⚙️ Installation
 
-- Implement Mamba and Selective-SSM on raw VGRF signals.
-- Compare against TSFresh baselines using identical folds and metrics.
-- Deliver final slides + 4-page report (+ 1 reference page) for 10 ECTS submission.
-
----
-
-## ⚙️ Setup Instructions
+Create virtual environment:
 
 ```bash
 python -m venv .venv
-.\.venv\Scripts\activate      # Windows
-source .venv/bin/activate     # macOS/Linux
+```
 
+Activate environment:
+
+Windows
+
+```bash
+.venv\Scripts\activate
+```
+
+Install dependencies:
+
+```bash
 pip install -r requirements.txt
 ```
 
-**Requirements:**
+Main libraries used:
 
-```
-pandas>=2.0
-numpy>=1.24
-matplotlib>=3.7
-seaborn>=0.12
-scikit-learn>=1.3
-tsfresh>=0.20
-tqdm>=4.66
-openpyxl
-```
+- pandas
+- numpy
+- scikit-learn
+- tsfresh
+- matplotlib
+- seaborn
+- catboost
 
 ---
 
-## 🧪 Troubleshooting
+# 🌐 Data Source
 
-| Issue                                        | Fix                                                   |
-| :------------------------------------------- | :---------------------------------------------------- |
-| `ModuleNotFoundError: No module named 'src'` | Run scripts using `python -m scripts.xxx` from root   |
-| Excel read error                             | Install `openpyxl` or `xlrd`                          |
-| PCA error (contains NaN)                     | Handled by median imputation                          |
-| No files found                               | Ensure `.txt` signals are in `data/raw/` (not nested) |
+PhysioNet Gait Database
 
----
+Goldberger AL, Amaral LAN, Glass L, et al.
 
-## 🌐 Data Source
-
-[PhysioNet Gaitpdb v1.0.0](https://physionet.org/content/gaitpdb/1.0.0/) — Vertical Ground Reaction Force signals for Parkinson’s Disease and Healthy Controls.
+[https://physionet.org/content/gaitpdb/1.0.0/](https://physionet.org/content/gaitpdb/1.0.0/)
 
 ---
 
-## 👨‍💻 Author
+# 👨‍💻 Author
 
 **Prosenjit Chowdhury**
-M.Sc. Artificial Intelligence — FAU Erlangen-Nürnberg
-Working Student, SIX SI – Professional Services & EC&O, SAP SE
-🔗 GitHub: [@prosenjit-chd](https://github.com/prosenjit-chd)
+
+M.Sc. Artificial Intelligence
+Friedrich-Alexander University Erlangen-Nürnberg (FAU)
+
+Working Student – Solution & Innovation Experience (SIX-SI)
+SAP SE
+
+GitHub
+[https://github.com/prosenjit-chd](https://github.com/prosenjit-chd)
 
 ---
 
-## 📊 Citation
+# 📜 Citation
 
-If you use this repository, please cite:
+If you use this repository in research, please cite:
 
-> Arias Vergara T., Pattern Recognition Lab (2025): Time Series Intelligence – Parkinson’s Gait Analysis using SSMs. FAU Erlangen-Nürnberg.
+```
+Arias Vergara, T. (2025)
+Time Series Intelligence Project – Parkinson’s Gait Analysis
+Pattern Recognition Lab
+Friedrich-Alexander University Erlangen-Nürnberg
+```
 
----
+```
+
+
+```

@@ -14,7 +14,7 @@ def load_vgrf_signal(filepath):
     df = pd.read_csv(filepath, sep="\t", header=None)
     n_cols = df.shape[1]
 
-    print(f"📄 Loaded {os.path.basename(filepath)} with {n_cols} columns")
+    print(f"[LOADED] {os.path.basename(filepath)} with {n_cols} columns")
 
     # Split evenly between left/right
     half = n_cols // 2
@@ -41,7 +41,7 @@ def plot_zoomed_vgrf(df, title, save_path):
     plt.tight_layout()
     plt.savefig(save_path, dpi=300)
     plt.close()
-    print(f"✅ Saved: {save_path}")
+    print(f"[OK] Saved: {save_path}")
 
 
 # === LOAD & PLOT ===
@@ -59,4 +59,4 @@ plot_zoomed_vgrf(
     "outputs/figures/zoomed_vgrf_patient.png",
 )
 
-print("🎯 Done — Zoomed plots generated for clearer visualization.")
+print("[DONE] Zoomed plots generated for clearer visualization.")

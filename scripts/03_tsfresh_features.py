@@ -58,6 +58,25 @@ def extract_simple_features(signal, window_len, step_len):
         end = start + window_len
         window = signal[start:end]
 
+        # Skip if window has too little variance (constant signal)
+        if np.std(window) < 1e-10:
+            # Use safe defaults
+            features["mean"].append(np.mean(window))
+            features["std"].append(0.0)
+            features["min"].append(np.min(window))
+            features["max"].append(np.max(window))
+            features["median"].append(np.median(window))
+            features["q25"].append(np.percentile(window, 25))
+            features["q75"].append(np.percentile(window, 75))
+            features["iqr"].append(0.0)
+            features["rms"].append(np.sqrt(np.mean(window**2)))
+            features["peak_to_peak"].append(0.0)
+            features["zero_crossings"].append(0)
+            features["skewness"].append(0.0)
+            features["kurtosis"].append(0.0)
+            features["energy"].append(np.sum(window**2))
+            continue
+
         # Basic statistics
         features["mean"].append(np.mean(window))
         features["std"].append(np.std(window))
@@ -70,8 +89,18 @@ def extract_simple_features(signal, window_len, step_len):
         features["rms"].append(np.sqrt(np.mean(window**2)))
         features["peak_to_peak"].append(np.ptp(window))
         features["zero_crossings"].append(np.sum(np.diff(np.sign(window)) != 0))
-        features["skewness"].append(stats.skew(window))
-        features["kurtosis"].append(stats.kurtosis(window))
+
+        # Safe skewness and kurtosis
+        try:
+            features["skewness"].append(stats.skew(window))
+        except:
+            features["skewness"].append(0.0)
+
+        try:
+            features["kurtosis"].append(stats.kurtosis(window))
+        except:
+            features["kurtosis"].append(0.0)
+
         features["energy"].append(np.sum(window**2))
 
     return features
@@ -86,10 +115,28 @@ def aggregate_features(feature_dict):
 
     for feat_name, feat_values in feature_dict.items():
         arr = np.array(feat_values)
-        agg_features[f"{feat_name}_mean"] = np.mean(arr)
-        agg_features[f"{feat_name}_std"] = np.std(arr)
-        agg_features[f"{feat_name}_skew"] = stats.skew(arr)
-        agg_features[f"{feat_name}_kurt"] = stats.kurtosis(arr)
+
+        # Handle edge cases
+        if len(arr) == 0 or np.all(np.isnan(arr)):
+            agg_features[f"{feat_name}_mean"] = 0.0
+            agg_features[f"{feat_name}_std"] = 0.0
+            agg_features[f"{feat_name}_skew"] = 0.0
+            agg_features[f"{feat_name}_kurt"] = 0.0
+            continue
+
+        # Safe statistics
+        agg_features[f"{feat_name}_mean"] = np.nanmean(arr)
+        agg_features[f"{feat_name}_std"] = np.nanstd(arr)
+
+        try:
+            agg_features[f"{feat_name}_skew"] = stats.skew(arr, nan_policy="omit")
+        except:
+            agg_features[f"{feat_name}_skew"] = 0.0
+
+        try:
+            agg_features[f"{feat_name}_kurt"] = stats.kurtosis(arr, nan_policy="omit")
+        except:
+            agg_features[f"{feat_name}_kurt"] = 0.0
 
     return agg_features
 
@@ -156,8 +203,32 @@ def collect_sequences(side="R", n_files=None):
 
 def reduce_and_plot(X, y, tag):
     """Z-score, PCA, t-SNE, and plot."""
+    # Remove features with zero variance or all NaN
+    valid_cols = []
+    for i in range(X.shape[1]):
+        col = X[:, i]
+        if not np.all(np.isnan(col)) and np.nanstd(col) > 1e-10:
+            valid_cols.append(i)
+
+    print(f"  Kept {len(valid_cols)}/{X.shape[1]} features (removed zero-variance)")
+    X = X[:, valid_cols]
+
+    # Replace any remaining NaN with column median
+    col_median = np.nanmedian(X, axis=0)
+    for i in range(X.shape[1]):
+        mask = np.isnan(X[:, i])
+        if mask.any():
+            X[mask, i] = col_median[i]
+
+    # Replace inf with large values
+    X = np.nan_to_num(X, nan=0.0, posinf=1e10, neginf=-1e10)
+
+    # Z-score normalization
     scaler = StandardScaler()
     Xz = scaler.fit_transform(X)
+
+    # Final check
+    Xz = np.nan_to_num(Xz, nan=0.0, posinf=1e10, neginf=-1e10)
 
     # PCA
     pca = PCA(n_components=2, random_state=42)
@@ -195,7 +266,7 @@ def reduce_and_plot(X, y, tag):
         out_path = FIG_DIR / f"{method.lower()}_{tag}.png"
         plt.savefig(out_path, dpi=150, bbox_inches="tight")
         plt.close()
-        print(f"  ✅ {out_path.name}")
+        print(f"  [OK] {out_path.name}")
 
     scatter(Xp, "PCA")
     scatter(Xt, "tSNE")
@@ -207,12 +278,12 @@ def run_pipeline():
     TAB_DIR.mkdir(parents=True, exist_ok=True)
 
     print(f"\n{'=' * 60}")
-    print(f"⚡ ULTRA-FAST MODE")
+    print(f" ULTRA-FAST MODE")
     print(f"Window: {WIN_MS}ms | Step: {STEP_MS}ms | Files: {N_FILES_LIMIT}")
     print(f"{'=' * 60}\n")
 
     for tag in ["R", "L", "LR"]:
-        print(f"\n🚀 {tag} foot")
+        print(f"\n {tag} foot")
         print("-" * 60)
 
         seqs, labels = collect_sequences(side=tag, n_files=N_FILES_LIMIT)
@@ -221,7 +292,7 @@ def run_pipeline():
 
         out_csv = TAB_DIR / f"features_{tag}.csv"
         features.to_csv(out_csv)
-        print(f"✅ Saved: {out_csv.name} | Shape: {features.shape}")
+        print(f"Saved: {out_csv.name} | Shape: {features.shape}")
 
         y = np.array([labels[sid] for sid in features.index])
         X = features.to_numpy(dtype=float)
@@ -229,7 +300,7 @@ def run_pipeline():
         reduce_and_plot(X, y, tag)
 
     print(f"\n{'=' * 60}")
-    print(f"✅ DONE! Check {FIG_DIR}")
+    print(f" DONE! Check {FIG_DIR}")
     print(f"{'=' * 60}")
 
 
@@ -238,4 +309,4 @@ if __name__ == "__main__":
 
     start = time.time()
     run_pipeline()
-    print(f"\n⏱️  Total time: {time.time() - start:.1f} seconds")
+    print(f"\n Total time: {time.time() - start:.1f} seconds")

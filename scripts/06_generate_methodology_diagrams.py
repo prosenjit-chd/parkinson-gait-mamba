@@ -75,7 +75,7 @@ def plot_cv_strategy():
     out_path = FIG_DIR / "cv_strategy_diagram.png"
     plt.savefig(out_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ Generated CV Diagram: {out_path}")
+    print(f"[OK] Generated CV Diagram: {out_path}")
 
 def plot_pipeline_schematic():
     """
@@ -126,9 +126,9 @@ def plot_pipeline_schematic():
     out_path = FIG_DIR / "pipeline_workflow.png"
     plt.savefig(out_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ Generated Pipeline Diagram: {out_path}")
+    print(f"[OK] Generated Pipeline Diagram: {out_path}")
 
 if __name__ == "__main__":
-    print("🎨 Generating Methodology Diagrams...")
+    print("[START] Generating Methodology Diagrams...")
     plot_cv_strategy()
     plot_pipeline_schematic()

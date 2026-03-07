@@ -101,7 +101,7 @@ def plot_line_trend(df, metric, title, filename):
     plt.close()
 
 def main():
-    print("🎨 Generating Comparison Diagrams...")
+    print("[START] Generating Comparison Diagrams...")
     df = load_results()
     
     # Diagram 1: Accuracy Bar Chart
@@ -137,7 +137,7 @@ def main():
     # Bonus: Accuracy Trend
     plot_line_trend(df, "Accuracy", "Accuracy Trend Across Inputs", FIG_DIR / "11_line_acc_trend.png")
 
-    print(f"✅ Generated 11 diagrams in {FIG_DIR}")
+    print(f"[OK] Generated 11 diagrams in {FIG_DIR}")
 
 if __name__ == "__main__":
     main()

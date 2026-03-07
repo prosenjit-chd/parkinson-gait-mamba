@@ -49,8 +49,11 @@ from sklearn.svm import SVC
 try:
     from catboost import CatBoostClassifier
 except ImportError:
-    print("❌ Missing CatBoost. Please run: pip install catboost")
-    sys.exit(1)
+    print("[ERROR] Missing CatBoost. Installing automatically...")
+    import subprocess
+    import sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "catboost", "--quiet"])
+    from catboost import CatBoostClassifier
 
 # ------------------------------------------------------------
 # Configuration
@@ -193,11 +196,11 @@ def main():
     
     all_results = []
     
-    print("\n🚀 Starting Corrected Deliverable 2 Optimization (5 Models x 3 Inputs)")
+    print("\n[START] Starting Corrected Deliverable 2 Optimization (5 Models x 3 Inputs)")
     print(f"   Models: {MODEL_LIST}")
     
     for side in INPUTS:
-        print(f"\n📂 Loading Data: {side}")
+        print(f"\n[LOAD] Loading Data: {side}")
         try:
             X, y = load_data(side)
         except Exception as e:
@@ -207,7 +210,7 @@ def main():
         outer_cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
         
         for m_name in MODEL_LIST:
-            print(f"   👉 Training {m_name} ({side})...")
+            print(f"   [TRAIN] Training {m_name} ({side})...")
             
             y_true_all = []
             y_pred_all = []
@@ -241,7 +244,7 @@ def main():
             spec = calc_specificity(y_true_all, y_pred_all)
             auc = roc_auc_score(y_true_all, y_prob_all)
             
-            print(f"      ✅ Acc: {acc:.3f} | AUC: {auc:.3f}")
+            print(f"      [OK] Acc: {acc:.3f} | AUC: {auc:.3f}")
             
             # Save Result
             all_results.append({
@@ -263,11 +266,11 @@ def main():
         df = pd.DataFrame(all_results)
         out_csv = TAB_DIR / "results_deliverable2_final.csv"
         df.to_csv(out_csv, index=False)
-        print(f"\n📄 Saved Final Results to: {out_csv}")
+        print(f"\n[SAVED] Saved Final Results to: {out_csv}")
         # Sort by AUC to show best performance
         print(df.sort_values(["Input", "AUC"], ascending=False).to_string())
     else:
-        print("❌ No results generated.")
+        print("[ERROR] No results generated.")
 
 if __name__ == "__main__":
     main()
